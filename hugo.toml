@@ -1,0 +1,28 @@
+baseURL = 'https://your-github-username.github.io/'
+languageCode = 'en-us'
+title = 'Data Engineer Portfolio'
+theme = 'hugo-coder'
+paginate = 10
+
+enableRobotsTXT = true
+
+[params]
+  author = 'Your Name'
+  description = 'Data Engineer specializing in data pipelines, warehousing, and analytics'
+  avatarURL = 'images/avatar.jpg'
+  metaKeywords = 'Data Engineer, Portfolio, ETL, Analytics, Python, SQL, Cloud'
+
+  # Social links
+  linkedin = 'your-linkedin'
+  github   = 'your-github'
+  email    = 'your.email@example.com'
+
+[[menu.main]]
+  name = 'Projects'
+  weight = 1
+  url = '#projects'
+
+[[menu.main]]
+  name = 'Blog'
+  weight = 2
+  url = 'posts'
