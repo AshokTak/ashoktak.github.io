@@ -1,0 +1,41 @@
+---
+layout: null
+permalink: /AshokAI/
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AshokAI — chat with my virtual self</title>
+  <meta name="description" content="Chat with AshokAI, a virtual persona of Ashok Tak.">
+  <link rel="stylesheet" href="chat.css">
+</head>
+<body>
+  <main class="page">
+    <header class="header">
+      <h1>AshokAI</h1>
+      <p class="tagline">My virtual self. Ask me about my work, journey, or what I'm building.</p>
+      <p class="meta"><a href="/">&larr; back to ashoktak.github.io</a></p>
+    </header>
+
+    <section id="chat" class="chat" aria-live="polite">
+      <div class="msg msg--bot">
+        <div class="bubble">Hi! I'm AshokAI &mdash; a virtual version of Ashok. Ask me anything about my work, background, or what I'm building. (Limited to 20 messages per day per visitor.)</div>
+      </div>
+    </section>
+
+    <form id="form" class="composer" autocomplete="off">
+      <input id="input" name="msg" type="text" maxlength="1500" placeholder="Type a message&hellip;" required>
+      <button id="send" type="submit">Send</button>
+    </form>
+    <p id="status" class="status"></p>
+
+    <footer class="footer">
+      <small>Powered by Gemini &middot; rate-limited &middot; not a substitute for the real Ashok.</small>
+    </footer>
+  </main>
+
+  <script src="chat.js"></script>
+</body>
+</html>
