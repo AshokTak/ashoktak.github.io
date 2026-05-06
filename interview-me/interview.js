@@ -78,16 +78,53 @@ function loadVoices() {
 speechSynthesis.onvoiceschanged = loadVoices;
 loadVoices();
 
+function splitSentences(text) {
+  // Split on sentence boundaries, keep non-empty chunks
+  return text
+    .split(/(?<=[.!?])\s+/)
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
+}
+
 function speak(text, onDone) {
   speechSynthesis.cancel();
-  const utt = new SpeechSynthesisUtterance(text);
-  utt.voice = selectedVoice;
-  utt.rate = 1.0;
-  utt.pitch = 1.0;
-  utt.onend = () => onDone && onDone();
-  utt.onerror = () => onDone && onDone();
+  const sentences = splitSentences(text);
+  if (!sentences.length) { onDone && onDone(); return; }
+
+  let index = 0;
+
+  // Chrome bug: speechSynthesis stalls after ~15s — keep it alive
+  const keepAlive = setInterval(() => {
+    if (speechSynthesis.speaking) {
+      speechSynthesis.pause();
+      speechSynthesis.resume();
+    }
+  }, 10000);
+
+  function speakNext() {
+    if (index >= sentences.length) {
+      clearInterval(keepAlive);
+      onDone && onDone();
+      return;
+    }
+    const utt = new SpeechSynthesisUtterance(sentences[index++]);
+    utt.voice = selectedVoice;
+    utt.rate = 1.05;
+    utt.pitch = 1.0;
+    utt.onend = speakNext;
+    utt.onerror = (e) => {
+      if (e.error !== "interrupted") speakNext();
+      else { clearInterval(keepAlive); onDone && onDone(); }
+    };
+    speechSynthesis.speak(utt);
+  }
+
   setState(SPEAKING);
-  speechSynthesis.speak(utt);
+  speakNext();
+}
+
+function stopSpeaking() {
+  speechSynthesis.cancel();
 }
 
 // ── State machine ────────────────────────────────────────────────────────────
@@ -214,7 +251,7 @@ micBtn.addEventListener("click", () => {
   if (!SR) return;
 
   if (appState === SPEAKING) {
-    speechSynthesis.cancel();
+    stopSpeaking();
     setState(IDLE);
     return;
   }
