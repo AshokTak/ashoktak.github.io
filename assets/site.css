@@ -44,6 +44,15 @@ a:hover { text-decoration: underline; }
   padding: 64px 24px 48px;
 }
 
+.hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.hero-text { flex: 1; }
+
 .hero h1 {
   font-size: 36px;
   margin: 0 0 6px;
@@ -60,6 +69,32 @@ a:hover { text-decoration: underline; }
   margin: 0 0 12px;
   color: var(--muted);
   font-size: 15px;
+}
+
+.avatar {
+  flex-shrink: 0;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid var(--border);
+}
+
+.avatar img,
+.avatar video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+@media (max-width: 480px) {
+  .hero {
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .avatar { width: 96px; height: 96px; }
 }
 
 .section {
