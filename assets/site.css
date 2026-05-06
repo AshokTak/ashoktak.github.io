@@ -1,0 +1,157 @@
+:root {
+  --bg: #0f1115;
+  --panel: #161922;
+  --text: #e7e9ee;
+  --muted: #8a93a6;
+  --accent: #4f8cff;
+  --border: #232838;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover { text-decoration: underline; }
+
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 64px 24px 48px;
+}
+
+.hero h1 {
+  font-size: 36px;
+  margin: 0 0 6px;
+  letter-spacing: -0.02em;
+}
+
+.role {
+  margin: 0 0 4px;
+  font-size: 17px;
+  color: var(--text);
+}
+
+.location {
+  margin: 0 0 18px;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.socials {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+  font-size: 15px;
+}
+
+.section {
+  margin-top: 40px;
+  border-top: 1px solid var(--border);
+  padding-top: 28px;
+}
+
+.section h2 {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin: 0 0 16px;
+  font-weight: 600;
+}
+
+.section p {
+  margin: 0 0 14px;
+}
+
+.cta {
+  margin-top: 16px;
+}
+
+.cta a {
+  font-weight: 500;
+}
+
+.timeline {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.timeline li {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 16px;
+  align-items: baseline;
+}
+
+.timeline .time {
+  color: var(--muted);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.timeline .what {
+  font-size: 15px;
+}
+
+.stack {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 8px 24px;
+  margin: 0;
+}
+
+.stack dt {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.stack dd {
+  margin: 0;
+  font-size: 15px;
+}
+
+.plain {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.plain li {
+  padding: 4px 0;
+}
+
+.footer {
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.footer p { margin: 4px 0; }
+
+@media (max-width: 600px) {
+  .page { padding: 40px 18px; }
+  .hero h1 { font-size: 30px; }
+  .timeline li { grid-template-columns: 100px 1fr; gap: 10px; }
+  .stack { grid-template-columns: 1fr; gap: 2px 0; }
+  .stack dd { margin-bottom: 12px; }
+}
