@@ -1,5 +1,3 @@
-// REPLACE THIS with the URL printed by `wrangler deploy`
-// Looks like: https://ashokai.<your-subdomain>.workers.dev
 const WORKER_URL = "https://ashokai.ashoktak95.workers.dev";
 
 const chatEl = document.getElementById("chat");
@@ -23,14 +21,14 @@ function addMessage(role, text, opts = {}) {
   wrap.appendChild(bubble);
   chatEl.appendChild(wrap);
   chatEl.scrollTop = chatEl.scrollHeight;
-  return wrap;
+  return bubble;
 }
 
 async function send(message) {
   history.push({ role: "user", text: message });
   addMessage("user", message);
 
-  const typingNode = addMessage("bot", "", { typing: true });
+  const typingBubble = addMessage("bot", "", { typing: true });
   sendBtn.disabled = true;
   statusEl.textContent = "";
 
@@ -41,23 +39,60 @@ async function send(message) {
       body: JSON.stringify({ messages: history.slice(-10) }),
     });
 
-    typingNode.remove();
-    const data = await res.json().catch(() => ({}));
+    const remaining = res.headers.get("X-Remaining");
 
-    if (!res.ok) {
-      const errMsg = data.error || `Error ${res.status}`;
-      addMessage("bot", errMsg, { error: true });
+    // Non-streaming error (rate limit, bad request, etc.)
+    if (!res.ok || res.headers.get("Content-Type")?.includes("application/json")) {
+      typingBubble.parentElement.remove();
+      const data = await res.json().catch(() => ({}));
+      addMessage("bot", data.error || `Error ${res.status}`, { error: true });
       if (res.status === 429) sendBtn.disabled = true;
       return;
     }
 
-    history.push({ role: "model", text: data.reply });
-    addMessage("bot", data.reply);
-    if (typeof data.remaining === "number") {
-      statusEl.textContent = `${data.remaining} messages left today.`;
+    // Switch from typing dots to empty streaming bubble
+    typingBubble.innerHTML = "";
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let fullText = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        const raw = line.slice(6).trim();
+        if (!raw || raw === "[DONE]") continue;
+
+        try {
+          const parsed = JSON.parse(raw);
+          const chunk = parsed.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+          if (chunk) {
+            fullText += chunk;
+            typingBubble.textContent = fullText;
+            chatEl.scrollTop = chatEl.scrollHeight;
+          }
+        } catch {
+          // partial chunk — wait for next read
+        }
+      }
+    }
+
+    if (fullText) {
+      history.push({ role: "model", text: fullText });
+    }
+    if (remaining !== null) {
+      statusEl.textContent = `${remaining} messages left today.`;
     }
   } catch (err) {
-    typingNode.remove();
+    typingBubble.parentElement?.remove();
     addMessage("bot", "Network error — please try again.", { error: true });
     console.error(err);
   } finally {
