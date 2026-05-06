@@ -1,10 +1,21 @@
 :root {
-  --bg: #0f1115;
-  --panel: #161922;
-  --text: #e7e9ee;
-  --muted: #8a93a6;
-  --accent: #4f8cff;
-  --border: #232838;
+  --bg: #ffffff;
+  --panel: #f7f8fa;
+  --text: #1a1d24;
+  --muted: #5b6373;
+  --accent: #2563eb;
+  --border: #e4e7ec;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1115;
+    --panel: #161922;
+    --text: #e7e9ee;
+    --muted: #8a93a6;
+    --accent: #4f8cff;
+    --border: #232838;
+  }
 }
 
 * { box-sizing: border-box; }
@@ -46,16 +57,8 @@ a:hover { text-decoration: underline; }
 }
 
 .location {
-  margin: 0 0 18px;
+  margin: 0 0 12px;
   color: var(--muted);
-  font-size: 15px;
-}
-
-.socials {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-bottom: 24px;
   font-size: 15px;
 }
 
@@ -91,7 +94,7 @@ a:hover { text-decoration: underline; }
   padding: 0;
   margin: 0;
   display: grid;
-  gap: 10px;
+  gap: 14px;
 }
 
 .timeline li {
@@ -107,8 +110,13 @@ a:hover { text-decoration: underline; }
   font-variant-numeric: tabular-nums;
 }
 
-.timeline .what {
-  font-size: 15px;
+.timeline .what { font-size: 15px; }
+
+.timeline .where {
+  display: block;
+  color: var(--muted);
+  font-size: 14px;
+  margin-top: 2px;
 }
 
 .stack {
@@ -139,19 +147,37 @@ a:hover { text-decoration: underline; }
 }
 
 .footer {
-  margin-top: 48px;
-  padding-top: 24px;
+  margin-top: 56px;
+  padding-top: 28px;
   border-top: 1px solid var(--border);
-  color: var(--muted);
-  font-size: 14px;
+  text-align: center;
 }
 
-.footer p { margin: 4px 0; }
+.footer-tag {
+  margin: 0 0 16px;
+  font-size: 16px;
+  color: var(--text);
+}
+
+.socials {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 18px;
+  margin-bottom: 16px;
+  font-size: 15px;
+}
+
+.signature {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
 
 @media (max-width: 600px) {
   .page { padding: 40px 18px; }
   .hero h1 { font-size: 30px; }
-  .timeline li { grid-template-columns: 100px 1fr; gap: 10px; }
+  .timeline li { grid-template-columns: 96px 1fr; gap: 10px; }
   .stack { grid-template-columns: 1fr; gap: 2px 0; }
   .stack dd { margin-bottom: 12px; }
 }

@@ -1,12 +1,29 @@
 :root {
-  --bg: #0f1115;
-  --panel: #161922;
-  --text: #e7e9ee;
-  --muted: #8a93a6;
-  --accent: #4f8cff;
-  --bot: #1f2433;
-  --user: #2a3553;
-  --border: #232838;
+  --bg: #ffffff;
+  --panel: #f7f8fa;
+  --text: #1a1d24;
+  --muted: #5b6373;
+  --accent: #2563eb;
+  --bot: #eef1f6;
+  --user: #dde6fb;
+  --border: #e4e7ec;
+  --error-bg: #fdecec;
+  --error-text: #8a1c1c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1115;
+    --panel: #161922;
+    --text: #e7e9ee;
+    --muted: #8a93a6;
+    --accent: #4f8cff;
+    --bot: #1f2433;
+    --user: #2a3553;
+    --border: #232838;
+    --error-bg: #4a1f1f;
+    --error-text: #f4c5c5;
+  }
 }
 
 * { box-sizing: border-box; }
@@ -90,8 +107,8 @@ body {
 }
 
 .bubble--error {
-  background: #4a1f1f;
-  color: #f4c5c5;
+  background: var(--error-bg);
+  color: var(--error-text);
 }
 
 .composer {
@@ -104,7 +121,7 @@ body {
   padding: 12px 14px;
   border-radius: 10px;
   border: 1px solid var(--border);
-  background: var(--panel);
+  background: var(--bg);
   color: var(--text);
   font-size: 15px;
 }
@@ -125,7 +142,7 @@ body {
 }
 
 #send:disabled {
-  background: #2c3753;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
