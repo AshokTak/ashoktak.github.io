@@ -9,26 +9,33 @@ permalink: /interview-me/
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>Interview Ashok — Voice Q&amp;A</title>
-  <meta name="description" content="Ask Ashok Tak interview-style questions by voice. Powered by AshokAI.">
+  <meta name="description" content="Ask Ashok Tak interview-style questions by voice.">
   <link rel="stylesheet" href="interview.css">
 </head>
 <body>
+
+  <!-- Start overlay — requires click to unlock browser audio -->
+  <div id="start-overlay" class="start-overlay">
+    <div class="start-card">
+      <div class="start-rings">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+        <span class="start-emoji">☕</span>
+      </div>
+      <h2>Virtual Coffee Chat with Ashok</h2>
+      <p>Ask me anything about my work, background, or experience — I'll answer by voice in real time.</p>
+      <p class="start-note">Best in Chrome or Edge &middot; Microphone required</p>
+      <button id="start-btn" class="start-btn">Start Coffee Chat</button>
+    </div>
+  </div>
+
   <main class="page">
     <header class="header">
       <a class="back" href="/">&larr; ashoktak.github.io</a>
       <h1>Interview Ashok</h1>
-      <p class="subtitle">Ask me anything — about my work, experience, or background. Speak naturally after clicking the mic.</p>
+      <p class="subtitle">Ask me anything — about my work, experience, or background.</p>
     </header>
-
-    <div id="start-overlay" class="start-overlay">
-      <div class="start-card">
-        <div class="start-avatar">👋</div>
-        <h2>Virtual Interview with Ashok</h2>
-        <p>Ask me anything about my work, background, or experience — I'll answer by voice.</p>
-        <p class="start-note">Works best in Chrome or Edge &middot; Allow microphone when prompted</p>
-        <button id="start-btn" class="start-btn">Start Coffee Chat</button>
-      </div>
-    </div>
 
     <div id="browser-warning" class="warning hidden">
       <p>Voice mode requires Chrome or Edge. <a href="/AshokAI/">Try the text chat instead &rarr;</a></p>
@@ -39,6 +46,11 @@ permalink: /interview-me/
     </section>
 
     <div id="interim" class="interim"></div>
+
+    <!-- Waveform canvas — visible while speaking -->
+    <div class="waveform-wrap" id="waveform-wrap">
+      <canvas id="waveform"></canvas>
+    </div>
 
     <div class="controls">
       <button id="mic-btn" class="mic-btn" aria-label="Click to speak">
@@ -56,7 +68,7 @@ permalink: /interview-me/
     </div>
 
     <footer class="footer">
-      <small>Voice powered by Web Speech API &middot; AI by <a href="/AshokAI/">AshokAI</a> &middot; 20 questions/day</small>
+      <small>Voice by <a href="https://elevenlabs.io" target="_blank" rel="noopener">ElevenLabs</a> &middot; AI by <a href="/AshokAI/">AshokAI</a> &middot; 20 questions/day</small>
     </footer>
   </main>
 

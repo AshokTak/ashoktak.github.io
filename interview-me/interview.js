@@ -1,10 +1,10 @@
-const WORKER_URL = "https://ashokai.ashoktak95.workers.dev";
+const WORKER_URL          = "https://ashokai.ashoktak95.workers.dev";
 const ELEVENLABS_API_KEY  = "9ae03f31ba32632f3ec355d383a04365f0a4c53c508dc6d83662cb0f245220e7";
 const ELEVENLABS_VOICE_ID = "ac41GshFUE6ID1ciVJUc";
 const ELEVENLABS_MODEL    = "eleven_turbo_v2_5";
-
 const GREETING = "Hi! Thanks for showing interest in having this virtual interview. Let's start our coffee chat. Ask me anything about my work, background, or experience.";
 
+// ── DOM refs ──────────────────────────────────────────────────────────────────
 const micBtn         = document.getElementById("mic-btn");
 const micLabel       = document.getElementById("mic-label");
 const micIcon        = micBtn.querySelector(".mic-icon");
@@ -13,56 +13,78 @@ const transcriptEl   = document.getElementById("transcript");
 const transcriptWrap = document.getElementById("transcript-wrap");
 const interimEl      = document.getElementById("interim");
 const warningEl      = document.getElementById("browser-warning");
+const waveformWrap   = document.getElementById("waveform-wrap");
+const canvas         = document.getElementById("waveform");
+const startOverlay   = document.getElementById("start-overlay");
+const startBtn       = document.getElementById("start-btn");
 
-const IDLE       = "idle";
-const RECORDING  = "recording";
-const PROCESSING = "processing";
-const SPEAKING   = "speaking";
+// ── State ─────────────────────────────────────────────────────────────────────
+const IDLE = "idle", RECORDING = "recording", PROCESSING = "processing", SPEAKING = "speaking";
+let appState = IDLE;
+let history  = [];
 
-let appState     = IDLE;
-let history      = [];
-let currentAudio = null;
+// ── Web Audio ─────────────────────────────────────────────────────────────────
+let audioCtx      = null;
+let analyserNode  = null;
+let bufferSource  = null;
+let animFrameId   = null;
 
-// ── Browser support ───────────────────────────────────────────────────────────
-const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-if (!SR) {
-  warningEl.classList.remove("hidden");
-  micBtn.disabled = true;
-  micLabel.textContent = "Not supported in this browser";
+function ensureAudioCtx() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    analyserNode = audioCtx.createAnalyser();
+    analyserNode.fftSize = 64;
+    analyserNode.smoothingTimeConstant = 0.8;
+    analyserNode.connect(audioCtx.destination);
+  }
+  if (audioCtx.state === "suspended") audioCtx.resume();
 }
 
-// ── Speech Recognition ────────────────────────────────────────────────────────
-let recognition;
-if (SR) {
-  recognition = new SR();
-  recognition.lang = "en-US";
-  recognition.interimResults = true;
-  recognition.continuous = false;
+function startWaveform() {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width  = canvas.offsetWidth  * dpr;
+  canvas.height = canvas.offsetHeight * dpr;
+  const ctx = canvas.getContext("2d");
+  ctx.scale(dpr, dpr);
+  const w = canvas.offsetWidth, h = canvas.offsetHeight;
+  const bins = analyserNode.frequencyBinCount;
+  const data = new Uint8Array(bins);
+  const barCount = 28;
+  const gap = 3;
+  const barW = (w - gap * (barCount - 1)) / barCount;
 
-  recognition.onresult = (e) => {
-    let interim = "", final = "";
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      if (e.results[i].isFinal) final += e.results[i][0].transcript;
-      else interim += e.results[i][0].transcript;
+  function draw() {
+    animFrameId = requestAnimationFrame(draw);
+    analyserNode.getByteFrequencyData(data);
+    ctx.clearRect(0, 0, w, h);
+
+    // sample bins evenly across frequency range
+    for (let i = 0; i < barCount; i++) {
+      const binIndex = Math.floor((i / barCount) * (bins * 0.6)); // use lower 60% of spectrum
+      const value    = data[binIndex] / 255;
+      const barH     = Math.max(3, value * h * 0.9);
+      const x        = i * (barW + gap);
+      const y        = (h - barH) / 2;
+      const alpha    = 0.4 + value * 0.6;
+
+      ctx.fillStyle = `rgba(79, 140, 255, ${alpha})`;
+      ctx.beginPath();
+      ctx.roundRect(x, y, barW, barH, barW / 2);
+      ctx.fill();
     }
-    interimEl.textContent = final || interim;
-  };
-
-  recognition.onend = () => {
-    const text = interimEl.textContent.trim();
-    interimEl.textContent = "";
-    if (appState === RECORDING && text) sendMessage(text);
-    else setState(IDLE);
-  };
-
-  recognition.onerror = (e) => {
-    interimEl.textContent = "";
-    if (e.error !== "no-speech") appendError("Microphone error: " + e.error);
-    setState(IDLE);
-  };
+  }
+  waveformWrap.classList.add("active");
+  draw();
 }
 
-// ── ElevenLabs TTS (browser-side) ────────────────────────────────────────────
+function stopWaveform() {
+  if (animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null; }
+  waveformWrap.classList.remove("active");
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+// ── ElevenLabs TTS ────────────────────────────────────────────────────────────
 async function speak(text, onDone) {
   setState(SPEAKING);
   try {
@@ -85,26 +107,37 @@ async function speak(text, onDone) {
 
     if (!res.ok) throw new Error(`ElevenLabs ${res.status}`);
 
-    const blob = await res.blob();
-    const audioUrl = URL.createObjectURL(blob);
-    const audio = new Audio(audioUrl);
-    currentAudio = audio;
+    const arrayBuffer = await res.arrayBuffer();
 
-    audio.onended = () => { URL.revokeObjectURL(audioUrl); currentAudio = null; onDone && onDone(); };
-    audio.onerror = () => { URL.revokeObjectURL(audioUrl); currentAudio = null; onDone && onDone(); };
-    audio.play();
+    ensureAudioCtx();
+    const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+    if (bufferSource) { try { bufferSource.stop(); } catch {} }
+
+    bufferSource = audioCtx.createBufferSource();
+    bufferSource.buffer = audioBuffer;
+    bufferSource.connect(analyserNode);
+    bufferSource.onended = () => {
+      stopWaveform();
+      bufferSource = null;
+      onDone && onDone();
+    };
+    startWaveform();
+    bufferSource.start(0);
+
   } catch (err) {
-    console.warn("ElevenLabs TTS failed, falling back to Web Speech:", err);
+    console.warn("ElevenLabs failed, falling back:", err);
     speakFallback(text, onDone);
   }
 }
 
 function stopSpeaking() {
-  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+  if (bufferSource) { try { bufferSource.stop(); } catch {} bufferSource = null; }
+  stopWaveform();
   speechSynthesis.cancel();
 }
 
-// Web Speech API fallback (sentence-split to avoid Chrome cutoff bug)
+// ── Web Speech fallback ───────────────────────────────────────────────────────
 function speakFallback(text, onDone) {
   const sentences = text.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(Boolean);
   if (!sentences.length) { onDone && onDone(); return; }
@@ -126,6 +159,42 @@ function speakFallback(text, onDone) {
   next();
 }
 
+// ── Speech Recognition ────────────────────────────────────────────────────────
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (!SR) {
+  warningEl.classList.remove("hidden");
+  micBtn.disabled = true;
+  micLabel.textContent = "Not supported in this browser";
+}
+
+let recognition;
+if (SR) {
+  recognition = new SR();
+  recognition.lang = "en-US";
+  recognition.interimResults = true;
+  recognition.continuous = false;
+
+  recognition.onresult = (e) => {
+    let interim = "", final = "";
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) final += e.results[i][0].transcript;
+      else interim += e.results[i][0].transcript;
+    }
+    interimEl.textContent = final || interim;
+  };
+  recognition.onend = () => {
+    const text = interimEl.textContent.trim();
+    interimEl.textContent = "";
+    if (appState === RECORDING && text) sendMessage(text);
+    else setState(IDLE);
+  };
+  recognition.onerror = (e) => {
+    interimEl.textContent = "";
+    if (e.error !== "no-speech") appendError("Microphone error: " + e.error);
+    setState(IDLE);
+  };
+}
+
 // ── State machine ─────────────────────────────────────────────────────────────
 function setState(s) {
   appState = s;
@@ -144,9 +213,9 @@ function setState(s) {
 
 // ── Transcript ────────────────────────────────────────────────────────────────
 function appendTurn(role, text, opts = {}) {
-  const turn = document.createElement("div");
+  const turn   = document.createElement("div");
   turn.className = "turn";
-  const label = document.createElement("div");
+  const label  = document.createElement("div");
   label.className = "turn-label";
   label.textContent = role === "user" ? "You" : "Ashok";
   const bubble = document.createElement("div");
@@ -163,10 +232,9 @@ function appendTurn(role, text, opts = {}) {
   transcriptWrap.scrollTop = transcriptWrap.scrollHeight;
   return bubble;
 }
-
 function appendError(msg) { appendTurn("ashok", msg, { error: true }); }
 
-// ── Core send ─────────────────────────────────────────────────────────────────
+// ── Send message ──────────────────────────────────────────────────────────────
 async function sendMessage(text) {
   setState(PROCESSING);
   history.push({ role: "user", text });
@@ -188,7 +256,7 @@ async function sendMessage(text) {
       return;
     }
 
-    const reader = res.body.getReader();
+    const reader  = res.body.getReader();
     const decoder = new TextDecoder();
     let buffer = "", fullText = "";
     typingBubble.innerHTML = "";
@@ -205,12 +273,8 @@ async function sendMessage(text) {
         if (!raw || raw === "[DONE]") continue;
         try {
           const chunk = JSON.parse(raw).candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-          if (chunk) {
-            fullText += chunk;
-            typingBubble.textContent = fullText;
-            transcriptWrap.scrollTop = transcriptWrap.scrollHeight;
-          }
-        } catch { /* partial chunk */ }
+          if (chunk) { fullText += chunk; typingBubble.textContent = fullText; transcriptWrap.scrollTop = transcriptWrap.scrollHeight; }
+        } catch {}
       }
     }
 
@@ -243,13 +307,10 @@ micBtn.addEventListener("click", () => {
   }
 });
 
-// ── Opening greeting ──────────────────────────────────────────────────────────
-const startOverlay = document.getElementById("start-overlay");
-const startBtn     = document.getElementById("start-btn");
-
+// ── Start overlay ─────────────────────────────────────────────────────────────
 startBtn.addEventListener("click", () => {
   startOverlay.classList.add("hidden");
-  // User gesture now active — ElevenLabs audio will play
+  ensureAudioCtx(); // unlock AudioContext with user gesture
   speak(GREETING, () => setState(IDLE));
 });
 
