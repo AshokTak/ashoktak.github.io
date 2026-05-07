@@ -3,7 +3,7 @@ const ELEVENLABS_API_KEY  = "9ae03f31ba32632f3ec355d383a04365f0a4c53c508dc6d8366
 const ELEVENLABS_VOICE_ID = "ac41GshFUE6ID1ciVJUc";
 const ELEVENLABS_MODEL    = "eleven_turbo_v2_5";
 
-const GREETING = "Hi! I'm Ashok. Click the microphone and ask me anything — about my work, experience, or background. I'll answer as if we're in an interview.";
+const GREETING = "Hi! Thanks for showing interest in having this virtual interview. Let's start our coffee chat. Ask me anything about my work, background, or experience.";
 
 const micBtn         = document.getElementById("mic-btn");
 const micLabel       = document.getElementById("mic-label");
@@ -244,7 +244,13 @@ micBtn.addEventListener("click", () => {
 });
 
 // ── Opening greeting ──────────────────────────────────────────────────────────
-window.addEventListener("load", () => {
-  setState(IDLE);
-  setTimeout(() => speak(GREETING, () => setState(IDLE)), 800);
+const startOverlay = document.getElementById("start-overlay");
+const startBtn     = document.getElementById("start-btn");
+
+startBtn.addEventListener("click", () => {
+  startOverlay.classList.add("hidden");
+  // User gesture now active — ElevenLabs audio will play
+  speak(GREETING, () => setState(IDLE));
 });
+
+window.addEventListener("load", () => setState(IDLE));
