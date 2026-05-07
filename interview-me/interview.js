@@ -139,24 +139,35 @@ function stopSpeaking() {
 
 // ── Web Speech fallback ───────────────────────────────────────────────────────
 function speakFallback(text, onDone) {
-  const sentences = text.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(Boolean);
-  if (!sentences.length) { onDone && onDone(); return; }
-  let i = 0;
+  speechSynthesis.cancel();
+  if (!text) { onDone && onDone(); return; }
+
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.rate = 1.05;
+
+  let finished = false;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    clearInterval(keepAlive);
+    clearInterval(poll);
+    onDone && onDone();
+  };
+
+  utt.onend = finish;
+  utt.onerror = (e) => { if (e.error !== "interrupted") finish(); };
+
+  // Chrome bug: speechSynthesis silently stops on long text — pause/resume every 5s
   const keepAlive = setInterval(() => {
     if (speechSynthesis.speaking) { speechSynthesis.pause(); speechSynthesis.resume(); }
-  }, 10000);
-  function next() {
-    if (i >= sentences.length) { clearInterval(keepAlive); onDone && onDone(); return; }
-    const utt = new SpeechSynthesisUtterance(sentences[i++]);
-    utt.rate = 1.05;
-    utt.onend = next;
-    utt.onerror = (e) => {
-      if (e.error !== "interrupted") next();
-      else { clearInterval(keepAlive); onDone && onDone(); }
-    };
-    speechSynthesis.speak(utt);
-  }
-  next();
+  }, 5000);
+
+  // Fallback: poll until speaking stops (in case onend never fires)
+  const poll = setInterval(() => {
+    if (!speechSynthesis.speaking && !speechSynthesis.pending) finish();
+  }, 500);
+
+  speechSynthesis.speak(utt);
 }
 
 // ── Speech Recognition ────────────────────────────────────────────────────────
