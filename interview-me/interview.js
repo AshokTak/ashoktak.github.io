@@ -1,5 +1,5 @@
 const WORKER_URL          = "https://ashokai.ashoktak95.workers.dev";
-const ELEVENLABS_API_KEY  = "9ae03f31ba32632f3ec355d383a04365f0a4c53c508dc6d83662cb0f245220e7";
+const ELEVENLABS_API_KEY  = "sk_882eb94ac7bf513a5aa8fdd77eb209534e5493e7dfc5605b";
 const ELEVENLABS_VOICE_ID = "ac41GshFUE6ID1ciVJUc";
 const ELEVENLABS_MODEL    = "eleven_turbo_v2_5";
 const GREETING = "Hi! Thanks for showing interest in having this virtual interview. Let's start our coffee chat. Ask me anything about my work, background, or experience.";
